@@ -10,6 +10,8 @@ import pickle
 import pygame
 from pygame.locals import *
 
+from plot import PlotData
+
 # Initialize the bot
 bot = Bot()
 
@@ -29,14 +31,21 @@ BASE = [336, 112]
 BACKGROUND = [288, 512]
 
 def main():
-    global HITMASKS, ITERATIONS, VERBOSE, bot
+    global HITMASKS, ITERATIONS, VERBOSE, DUMP_DATA, bot, plot_data
 
     parser = argparse.ArgumentParser("learn.py")
     parser.add_argument('iter', type=int, default=5000, help='number of iterations to run')
     parser.add_argument('--verbose', action='store_true', help='output [iteration | score] to stdout')
+    parser.add_argument('--data', type=str, help='path to [score] output pkl file for plotting.')
     args = parser.parse_args()
     ITERATIONS = args.iter
     VERBOSE = args.verbose
+
+    if args.data:
+        DUMP_DATA = True
+        plot_data = PlotData(args.data)
+    else:
+        DUMP_DATA = False
 
     # load dumped HITMASKS
     with open('hitmasks_data.pkl', 'rb') as input:
@@ -178,8 +187,12 @@ def showGameOverScreen(crashInfo):
         score = crashInfo['score']
         print(str(bot.gameCNT - 1) + " | " + str(score))
 
+    if DUMP_DATA:
+        plot_data.append(score)
+
     if bot.gameCNT == (ITERATIONS):
         bot.dump_qvalues(force=True)
+        plot_data.dump()
         sys.exit()
 
 def playerShm(playerShm):
